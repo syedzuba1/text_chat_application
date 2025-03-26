@@ -267,7 +267,7 @@ void run_client(int port) {
 
             // Build and send: <dest_ip> <msg>
             std::stringstream msg_out;
-            msg_out << dest_ip << " " << msg_start;
+            msg_out << dest_ip << " " << message;
 
             if (send(sockfd, msg_out.str().c_str(), msg_out.str().length(), 0) < 0) {
                 cse4589_print_and_log("[SEND:ERROR]\n");
