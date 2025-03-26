@@ -226,33 +226,34 @@ void run_client(int port) {
                 continue;
             }
 
-            char* dest_ip = strtok(NULL, " ");
-            if (!dest_ip) {
-                cse4589_print_and_log("[SEND:ERROR]\n");
-                cse4589_print_and_log("[SEND:END]\n");
+            // Extract raw command line first
+            std::string raw_input(input_buffer);
+
+            // Skip the command
+            size_t ip_start = raw_input.find("SEND") + 5;
+            if (ip_start == std::string::npos) {
+                cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
                 continue;
             }
 
-            // Find start of message
-            char* msg_start = strstr(input_buffer, dest_ip);
-            if (!msg_start) {
-                cse4589_print_and_log("[SEND:ERROR]\n");
-                cse4589_print_and_log("[SEND:END]\n");
-                continue;
-            }
-            msg_start += strlen(dest_ip);
-            while (*msg_start == ' ') msg_start++;  // Trim any leading space
-
-            if (strlen(msg_start) == 0 || strlen(msg_start) > 256) {
-                cse4589_print_and_log("[SEND:ERROR]\n");
-                cse4589_print_and_log("[SEND:END]\n");
+            // Find the space after the IP
+            size_t msg_start = raw_input.find(' ', ip_start);
+            if (msg_start == std::string::npos) {
+                cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
                 continue;
             }
 
+            std::string dest_ip = raw_input.substr(ip_start, msg_start - ip_start);
+            std::string message = raw_input.substr(msg_start + 1);
+
+            if (message.empty() || message.length() > 256) {
+                cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
+                continue;
+            }
             // Validate dest_ip exists in current client list
             bool found = false;
             for (int i = 0; i < client_count; ++i) {
-                if (strcmp(client_list[i].ip, dest_ip) == 0) {
+                if (strcmp(client_list[i].ip, dest_ip.c_str()) == 0) {
                     found = true;
                     break;
                 }
