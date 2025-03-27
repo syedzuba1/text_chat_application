@@ -137,13 +137,11 @@ void run_client(int port) {
 
     while (1) {
         read_fds = master_set;
-        /*
         if (sockfd != -1) {
             FD_SET(sockfd, &read_fds);
             if (sockfd > fdmax)
                 fdmax = sockfd;
         }
-        */
 
         if (select(fdmax + 1, &read_fds, NULL, NULL, NULL) < 0) {
             perror("select");
@@ -230,25 +228,25 @@ void run_client(int port) {
             std::istringstream ss(full_input);
             std::vector<std::string> split_command;
             std::string word;
-        
+
             // Split full command into parts
             while (ss >> word)
                 split_command.push_back(word);
-        
+
             if (split_command.size() < 3) {
                 cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
                 continue;
             }
-        
+
             std::string destination_ip = split_command[1];
-        
+
             // Validate destination IP format
             struct sockaddr_in sa;
             if (inet_pton(AF_INET, destination_ip.c_str(), &(sa.sin_addr)) != 1) {
                 cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
                 continue;
             }
-        
+
             // Validate IP exists in client_list
             bool found = false;
             for (int i = 0; i < client_count; ++i) {
@@ -261,22 +259,22 @@ void run_client(int port) {
                 cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
                 continue;
             }
-        
+
             // Construct message string (skip "SEND" and destination_ip)
             std::string message;
             for (size_t i = 2; i < split_command.size(); ++i) {
                 if (i > 2) message += " ";
                 message += split_command[i];
             }
-        
+
             if (message.empty() || message.length() > 256) {
                 cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
                 continue;
             }
-        
+
             std::stringstream msg_out;
             msg_out << destination_ip << " " << message;
-        
+
             if (send(sockfd, msg_out.str().c_str(), msg_out.str().length(), 0) < 0) {
                 cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
             } else {
