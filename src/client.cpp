@@ -148,6 +148,36 @@ void run_client(int port) {
             break;
         }
 
+        // Handle incoming message from server
+        if (sockfd != -1 && FD_ISSET(sockfd, &read_fds)) {
+            char buffer[1024];
+            memset(buffer, 0, sizeof(buffer));
+            int nbytes = recv(sockfd, buffer, sizeof(buffer), 0);
+
+            if (nbytes <= 0) {
+                close(sockfd);
+                FD_CLR(sockfd, &master_set);
+                sockfd = -1;
+                is_logged_in = false;
+                continue;
+            }
+
+            std::string incoming(buffer);
+            size_t space_pos = incoming.find(' ');
+            if (space_pos != std::string::npos) {
+                std::string sender_ip = incoming.substr(0, space_pos);
+                std::string msg = incoming.substr(space_pos + 1);
+
+                // EVENT logging format
+                cse4589_print_and_log("[RECEIVED:SUCCESS]\n");
+                cse4589_print_and_log("msg from:%s\n[msg]:%s\n", sender_ip.c_str(), msg.c_str());
+                cse4589_print_and_log("[RECEIVED:END]\n");
+            }
+            // prompt again
+            printf("[PA1-Client@CSE489/589]$ ");
+            fflush(stdout); 
+        }
+
         // Handle stdin
         if (FD_ISSET(STDIN_FILENO, &read_fds)) {
             printf("[PA1-Client@CSE489/589]$ ");
@@ -454,32 +484,6 @@ void run_client(int port) {
         } else {
             cse4589_print_and_log("[%s:ERROR]\n", command.c_str());
             cse4589_print_and_log("[%s:END]\n", command.c_str());
-        }
-        // Handle incoming message from server
-        if (sockfd != -1 && FD_ISSET(sockfd, &read_fds)) {
-            char buffer[1024];
-            memset(buffer, 0, sizeof(buffer));
-            int nbytes = recv(sockfd, buffer, sizeof(buffer), 0);
-
-            if (nbytes <= 0) {
-                close(sockfd);
-                FD_CLR(sockfd, &master_set);
-                sockfd = -1;
-                is_logged_in = false;
-                continue;
-            }
-
-            std::string incoming(buffer);
-            size_t space_pos = incoming.find(' ');
-            if (space_pos != std::string::npos) {
-                std::string sender_ip = incoming.substr(0, space_pos);
-                std::string msg = incoming.substr(space_pos + 1);
-
-                // EVENT logging format
-                cse4589_print_and_log("[RECEIVED:SUCCESS]\n");
-                cse4589_print_and_log("msg from:%s\n[msg]:%s\n", sender_ip.c_str(), msg.c_str());
-                cse4589_print_and_log("[RECEIVED:END]\n");
-            } 
         }
         printf("[PA1-Client@CSE489/589]$ ");
         fflush(stdout);
