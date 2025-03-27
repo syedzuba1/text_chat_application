@@ -160,6 +160,8 @@ void run_client(int port) {
 
             input_buffer[strcspn(input_buffer, "\n")] = '\0';
 
+
+            std::string full_input(input_buffer);
             char* token = strtok(input_buffer, " ");
             if (!token) continue;
 
@@ -227,7 +229,7 @@ void run_client(int port) {
             }
 
             // Extract raw command line first
-            std::string raw_input(input_buffer);
+            std::string raw_input(full_input);
 
             // Skip the command
             size_t ip_start = raw_input.find("SEND") + 5;
