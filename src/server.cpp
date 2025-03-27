@@ -329,6 +329,22 @@ void run_server(int port) {
                         }
                         continue; // skip relay
                     }
+                    else if (raw_msg.rfind("BLOCK ", 0) == 0) {
+                        string blocked_ip = raw_msg.substr(6);
+                        string blocker_ip = get_ip_by_fd(i);
+                        
+                        for (auto& client : connected_clients) {
+                            if (client.ip == blocker_ip) {
+                                // Avoid duplicate entries
+                                if (std::find(client.blocked_ips.begin(), client.blocked_ips.end(), blocked_ip) == client.blocked_ips.end()) {
+                                    client.blocked_ips.push_back(blocked_ip);
+                                }
+                                break;
+                            }
+                        }
+                        continue; // Do not treat this like a SEND
+                    }
+
 
                     // Example format: "<TO-IP> <MESSAGE>"
                     string full_msg(buffer);
@@ -344,18 +360,21 @@ void run_server(int port) {
                             // Broadcast to all logged-in clients EXCEPT sender and those who blocked the sender
                             for (auto& client : connected_clients) {
                                 if (client.ip != from_ip) {
+                                    bool blocked = std::find(client.blocked_ips.begin(), client.blocked_ips.end(), from_ip) != client.blocked_ips.end();
+                                    
                                     if (client.status == "logged-in") {
-                                    // Deliver if not blocked
-                                    if (std::find(client.blocked_ips.begin(), client.blocked_ips.end(), from_ip) == client.blocked_ips.end()) {
-                                        string forward = from_ip + " " + msg;
-                                        send(client.fd, forward.c_str(), forward.length(), 0);
-                                        client.num_msg_rcv++;
-                                    }
+                                        if (!blocked) {
+                                            string forward = from_ip + " " + msg;
+                                            send(client.fd, forward.c_str(), forward.length(), 0);
+                                            client.num_msg_rcv++;
+                                        }
                                     } else {
-                                        // Client is offline — buffer the message
-                                        string buffer_entry = from_ip + " " + msg;
-                                        client.buffered_messages.push_back(buffer_entry);
-                                    }   
+                                        // Offline: only buffer if not blocked
+                                        if (!blocked) {
+                                            string buffer_entry = from_ip + " " + msg;
+                                            client.buffered_messages.push_back(buffer_entry);
+                                        }
+                                    }
                                 }
                             }
                             
