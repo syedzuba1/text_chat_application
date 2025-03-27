@@ -132,7 +132,7 @@ void run_client(int port) {
     FD_SET(STDIN_FILENO, &master_set);
     int fdmax = STDIN_FILENO;
 
-    printf("[PA1-Client@CSE489/589]$ ");
+    printf("\n[PA1-Client@CSE489/589]$ ");
     fflush(stdout);
 
     while (1) {
@@ -180,7 +180,7 @@ void run_client(int port) {
 
         // Handle stdin
         if (FD_ISSET(STDIN_FILENO, &read_fds)) {
-            printf("[PA1-Client@CSE489/589]$ ");
+            printf("\n[PA1-Client@CSE489/589]$ ");
             fflush(stdout);
 
             if (fgets(input_buffer, MAX_INPUT_SIZE, stdin) == NULL)
@@ -485,7 +485,7 @@ void run_client(int port) {
             cse4589_print_and_log("[%s:ERROR]\n", command.c_str());
             cse4589_print_and_log("[%s:END]\n", command.c_str());
         }
-        printf("[PA1-Client@CSE489/589]$ ");
+        printf("\n[PA1-Client@CSE489/589]$ ");
         fflush(stdout);
     }
 }

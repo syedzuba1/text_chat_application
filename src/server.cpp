@@ -175,7 +175,7 @@ void run_server(int port) {
                 std::string hostname, ip;
                 int client_port = -1;
                 if (i == STDIN_FILENO) {
-                    printf("[PA1-Server@CSE489/589]$ ");
+                    printf("\n[PA1-Server@CSE489/589]$ ");
                     fflush(stdout);
 
                     if (fgets(input_buffer, MAX_INPUT_SIZE, stdin) == NULL)
@@ -313,6 +313,35 @@ void run_server(int port) {
                         }
                         continue;
                     }
+
+                    else if (raw_msg == "EXIT") {
+                        connected_clients.erase(
+                            std::remove_if(
+                                connected_clients.begin(), connected_clients.end(),[i](const SocketEntry& client) { return client.fd == i; }
+                            ),
+                            connected_clients.end()
+                        );
+                        
+                        close(i);
+                        FD_CLR(i, &master_set);
+                        continue;
+                    }
+
+
+
+                    else if (raw_msg == "LOGOUT") {
+                        for (auto& client : connected_clients) {
+                            if (client.fd == i) {
+                                client.status = "logged-out";
+                                client.fd = -1;
+                                break;
+                            }
+                        }
+                        
+                        close(i);
+                        FD_CLR(i, &master_set);
+                        continue;
+                    }
                     
                     else if (raw_msg.rfind("UNBLOCK ", 0) == 0) {
                         string unblock_ip = raw_msg.substr(8);
@@ -439,7 +468,7 @@ void run_server(int port) {
                     }
                 }
 
-                printf("[PA1-Server@CSE489/589]$ ");
+                printf("\n[PA1-Server@CSE489/589]$ ");
                 fflush(stdout);
             }
         }
