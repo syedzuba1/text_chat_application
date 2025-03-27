@@ -223,60 +223,64 @@ void run_client(int port) {
             }
         } else if (command == "SEND") {
             if (!is_logged_in) {
-                cse4589_print_and_log("[SEND:ERROR]\n");
-                cse4589_print_and_log("[SEND:END]\n");
-                continue;
-            }
-
-            // Extract raw command line first
-            std::string raw_input(full_input);
-
-            // Skip the command
-            size_t ip_start = raw_input.find("SEND") + 5;
-            if (ip_start == std::string::npos) {
                 cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
                 continue;
             }
 
-            // Find the space after the IP
-            size_t msg_start = raw_input.find(' ', ip_start);
-            if (msg_start == std::string::npos) {
+            std::istringstream ss(full_input);
+            std::vector<std::string> split_command;
+            std::string word;
+        
+            // Split full command into parts
+            while (ss >> word)
+                split_command.push_back(word);
+        
+            if (split_command.size() < 3) {
                 cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
                 continue;
             }
-
-            std::string dest_ip = raw_input.substr(ip_start, msg_start - ip_start);
-            std::string message = raw_input.substr(msg_start + 1);
-
-            if (message.empty() || message.length() > 256) {
+        
+            std::string destination_ip = split_command[1];
+        
+            // Validate destination IP format
+            struct sockaddr_in sa;
+            if (inet_pton(AF_INET, destination_ip.c_str(), &(sa.sin_addr)) != 1) {
                 cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
                 continue;
             }
-            // Validate dest_ip exists in current client list
+        
+            // Validate IP exists in client_list
             bool found = false;
             for (int i = 0; i < client_count; ++i) {
-                if (strcmp(client_list[i].ip, dest_ip.c_str()) == 0) {
+                if (client_list[i].ip == destination_ip) {
                     found = true;
                     break;
                 }
             }
-
             if (!found) {
-                cse4589_print_and_log("[SEND:ERROR]\n");
-                cse4589_print_and_log("[SEND:END]\n");
+                cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
                 continue;
             }
-
-            // Build and send: <dest_ip> <msg>
+        
+            // Construct message string (skip "SEND" and destination_ip)
+            std::string message;
+            for (size_t i = 2; i < split_command.size(); ++i) {
+                if (i > 2) message += " ";
+                message += split_command[i];
+            }
+        
+            if (message.empty() || message.length() > 256) {
+                cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
+                continue;
+            }
+        
             std::stringstream msg_out;
-            msg_out << dest_ip << " " << message;
-
+            msg_out << destination_ip << " " << message;
+        
             if (send(sockfd, msg_out.str().c_str(), msg_out.str().length(), 0) < 0) {
-                cse4589_print_and_log("[SEND:ERROR]\n");
-                cse4589_print_and_log("[SEND:END]\n");
+                cse4589_print_and_log("[SEND:ERROR]\n[SEND:END]\n");
             } else {
-                cse4589_print_and_log("[SEND:SUCCESS]\n");
-                cse4589_print_and_log("[SEND:END]\n");
+                cse4589_print_and_log("[SEND:SUCCESS]\n[SEND:END]\n");
             }
         } else if (command == "BROADCAST") {
             if (!is_logged_in) {
