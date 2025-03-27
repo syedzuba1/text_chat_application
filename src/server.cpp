@@ -299,6 +299,18 @@ void run_server(int port) {
 
                         std::string response_str = response.str();
                         send(i, response_str.c_str(), response_str.size(), 0);
+
+                        // Deliver any buffered messages
+                        auto it = std::find_if(connected_clients.begin(), connected_clients.end(), [&ip, &client_port](const SocketEntry& c) { return c.ip == ip && c.port == client_port; });
+
+                        if (it != connected_clients.end()) {
+                            for (const auto& m : it->buffered_messages) {
+                                send(i, m.c_str(), m.length(), 0);
+                                usleep(1000); // small delay to avoid TCP congestion
+                            }
+                            
+                            it->buffered_messages.clear();
+                        }
                         continue;
                     }
                     
@@ -331,14 +343,19 @@ void run_server(int port) {
                         if (to_ip == "255.255.255.255") {
                             // Broadcast to all logged-in clients EXCEPT sender and those who blocked the sender
                             for (auto& client : connected_clients) {
-                                if (client.status == "logged-in" && client.ip != from_ip) {
-                                    // Skip if client has blocked the sender
-                                    if (std::find(client.blocked_ips.begin(), client.blocked_ips.end(), from_ip) != client.blocked_ips.end())
-                                        continue;
-                                    
-                                    string forward = from_ip + " " + msg;
-                                    send(client.fd, forward.c_str(), forward.length(), 0);
-                                    client.num_msg_rcv++;
+                                if (client.ip != from_ip) {
+                                    if (client.status == "logged-in") {
+                                    // Deliver if not blocked
+                                    if (std::find(client.blocked_ips.begin(), client.blocked_ips.end(), from_ip) == client.blocked_ips.end()) {
+                                        string forward = from_ip + " " + msg;
+                                        send(client.fd, forward.c_str(), forward.length(), 0);
+                                        client.num_msg_rcv++;
+                                    }
+                                    } else {
+                                        // Client is offline — buffer the message
+                                        string buffer_entry = from_ip + " " + msg;
+                                        client.buffered_messages.push_back(buffer_entry);
+                                    }   
                                 }
                             }
                             

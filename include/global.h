@@ -53,6 +53,7 @@ typedef struct {
     int num_msg_sent;
     int num_msg_rcv;
     std::vector<std::string> blocked_ips;
+    std::vector<std::string> buffered_messages;
     int fd;
 } SocketEntry;
 
