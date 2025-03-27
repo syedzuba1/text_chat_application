@@ -317,17 +317,41 @@ void run_server(int port) {
                     else if (raw_msg.rfind("UNBLOCK ", 0) == 0) {
                         string unblock_ip = raw_msg.substr(8);
                         string unblocker_ip = get_ip_by_fd(i);
-                        
+
+                        bool is_valid_ip = false;
+                        bool was_blocked = false;
+
                         for (auto& client : connected_clients) {
                             if (client.ip == unblocker_ip) {
                                 auto it = std::find(client.blocked_ips.begin(), client.blocked_ips.end(), unblock_ip);
+
                                 if (it != client.blocked_ips.end()) {
                                     client.blocked_ips.erase(it);
+                                    was_blocked = true;
                                 }
+
+                                // Check if unblock_ip is valid (i.e., was in the logged-in client list)
+                                for (const auto& other : connected_clients) {
+                                    if (other.ip == unblock_ip) {
+                                        is_valid_ip = true;
+                                        break;
+                                    }
+                                }
+
                                 break;
                             }
                         }
-                        continue; // skip relay
+
+                        // Error handling if needed
+                        if (!is_valid_ip) {
+                            cse4589_print_and_log("[UNBLOCK:ERROR]\n");
+                            cse4589_print_and_log("[UNBLOCK:END]\n");
+                        } else if (!was_blocked) {
+                            cse4589_print_and_log("[UNBLOCK:ERROR]\n");
+                            cse4589_print_and_log("[UNBLOCK:END]\n");
+                        }
+
+                        continue;
                     }
                     else if (raw_msg.rfind("BLOCK ", 0) == 0) {
                         string blocked_ip = raw_msg.substr(6);
@@ -392,17 +416,25 @@ void run_server(int port) {
                             auto receiver_it = std::find_if(connected_clients.begin(), connected_clients.end(),[&to_ip](const SocketEntry& c) { return c.ip == to_ip; });
                             
                             if (sender_it != connected_clients.end() && receiver_it != connected_clients.end()) {
-                                // Only deliver if receiver hasn't blocked sender
-                                if (std::find(receiver_it->blocked_ips.begin(), receiver_it->blocked_ips.end(), from_ip) == receiver_it->blocked_ips.end()) {
+                                bool blocked = std::find(receiver_it->blocked_ips.begin(), receiver_it->blocked_ips.end(), from_ip) != receiver_it->blocked_ips.end();
+
+                                if (!blocked) {
                                     string forward = from_ip + " " + msg;
-                                    send(receiver_it->fd, forward.c_str(), forward.length(), 0);
-                                    receiver_it->num_msg_rcv++;
-                                    
-                                    log_event_message(from_ip, to_ip, msg);
+
+                                    if (receiver_it->status == "logged-in") {
+                                        send(receiver_it->fd, forward.c_str(), forward.length(), 0);
+                                        receiver_it->num_msg_rcv++;
+
+                                        log_event_message(from_ip, to_ip, msg);
+                                    } else {
+                                        // Receiver is logged out — buffer the message
+                                        receiver_it->buffered_messages.push_back(forward);
+                                    }
                                 }
-                                
+
                                 sender_it->num_msg_sent++;
                             }
+
                         }
                     }
                 }
