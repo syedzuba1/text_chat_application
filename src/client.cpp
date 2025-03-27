@@ -318,7 +318,7 @@ void run_client(int port) {
             }
 
             // Get the full message after the word "BROADCAST"
-            char* msg_start = strstr(input_buffer, " ");
+            const char* msg_start = strstr(full_input.c_str(), " ");
             if (!msg_start || strlen(msg_start + 1) == 0) {
                 cse4589_print_and_log("[BROADCAST:ERROR]\n");
                 cse4589_print_and_log("[BROADCAST:END]\n");
