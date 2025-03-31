@@ -407,7 +407,6 @@ void run_server(int port) {
                         string msg = full_msg.substr(space_pos + 1);
                         string from_ip = get_ip_by_fd(i);
 
-                        log_event_message(from_ip, to_ip, msg);
 
                         if (to_ip == "255.255.255.255") {
                             // Broadcast to all logged-in clients EXCEPT sender and those who blocked the sender
