@@ -194,8 +194,14 @@ void run_client(int port) {
             if (!token) continue;
 
             std::string command = token;
-            for (char& c : command)
-                c = toupper(c);
+            if (command != "AUTHOR" && command != "IP" && command != "PORT" &&
+                command != "LOGIN" && command != "LIST" && command != "REFRESH" &&
+                command != "SEND" && command != "BROADCAST" && command != "BLOCK" &&
+                command != "UNBLOCK" && command != "LOGOUT" && command != "EXIT") {
+                cse4589_print_and_log("[%s:ERROR]\n", command.c_str());
+                cse4589_print_and_log("[%s:END]\n", command.c_str());
+                continue;
+            }
 
         if (command == "AUTHOR") {
             cse4589_print_and_log("[AUTHOR:SUCCESS]\n");
