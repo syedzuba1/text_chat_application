@@ -205,7 +205,7 @@ void run_client(int port) {
 
         if (command == "AUTHOR") {
             cse4589_print_and_log("[AUTHOR:SUCCESS]\n");
-            cse4589_print_and_log("I, syedzuba, have read and understood the course academic integrity policy.\n");
+            cse4589_print_and_log("I, syedzuba-skodag_pa1, have read and understood the course academic integrity policy.\n");
             cse4589_print_and_log("[AUTHOR:END]\n");
 
         } else if (command == "IP") {

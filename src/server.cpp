@@ -202,7 +202,7 @@ void run_server(int port) {
 
                     if (strcmp(input_buffer, "AUTHOR") == 0) {
                         cse4589_print_and_log("[AUTHOR:SUCCESS]\n");
-                        cse4589_print_and_log("I, syedzuba, have read and understood the course academic integrity policy.\n");
+                        cse4589_print_and_log("I, syedzuba-skodag_pa1, have read and understood the course academic integrity policy.\n");
                         cse4589_print_and_log("[AUTHOR:END]\n");
 
                     } else if (my_strcmp(input_buffer, "IP") == 0) {
