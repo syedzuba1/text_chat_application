@@ -186,10 +186,18 @@ void run_server(int port) {
                     if (strlen(input_buffer) == 0)
                         continue;
 
-                    for (int i = 0; input_buffer[i]; i++) {
+                    bool is_uppercase = true;
+                    for (int i = 0; input_buffer[i]; ++i) {
                         if (input_buffer[i] >= 'a' && input_buffer[i] <= 'z') {
-                            input_buffer[i] = input_buffer[i] - 32;
+                            is_uppercase = false;
+                            break;
                         }
+                    }
+                    
+                    if (!is_uppercase) {
+                        cse4589_print_and_log("[%s:ERROR]\n", input_buffer);
+                        cse4589_print_and_log("[%s:END]\n", input_buffer);
+                        continue;
                     }
 
                     if (strcmp(input_buffer, "AUTHOR") == 0) {
